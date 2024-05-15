@@ -22,17 +22,18 @@ enchante.toml
 ```
 ## Why not `...`?
 <details>
-<summary>
-    Why not <a href="https://sqlmodel.tiangolo.com/">SQLModel</a> instead of Pydantic + SQLALchemy?
-</summary>
-SQLModel does seem perfect for keeping a single source of truth and keeping code DRY, however it still relies on SA 1.4 with `sqlalchemy2-stubs`, so until that's done, I'll be working with this combo.
-
+  <summary>
+    Why not <a href="https://sqlmodel.tiangolo.com/">SQLModel</a> instead of
+    Pydantic + SQLALchemy?
+  </summary>
+  SQLModel still has a long way to go
+  <a href="https://github.com/tiangolo/sqlmodel/issues/654">
+    with their current roadmap
+  </a>, but they're making good progress!
 </details>
-
-## How to use
-
-## Development
-
----
-
+## How to use 1. First run `enchante init
+<root_dir
+  >` 2. Now you can run `enchante create <object_name>` </object_name></root_dir
+>
+## Development ---
 License: [MIT](https://github.com/StevenJPx2/enchante/blob/main/LICENSE)
