@@ -5,14 +5,20 @@ description = "CLI tool to help scaffolding relational DB architecture as code"
 authors = ["Steven John <steven@stevenjohn.co>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "enchante", from = "src"}]
+packages = [{ include = "enchante", from = "src" }]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 pydantic = "^2.1.1"
 SQLAlchemy = "^2.0.19"
 alembic = "^1.11.1"
 typer = "^0.9.0"
+pyyaml = "^6.0.1"
+jinja2 = "^3.1.4"
+pyhumps = "^3.8.0"
+
+[tool.poetry.scripts]
+enchante = "enchante.main:app"
 
 
 [build-system]

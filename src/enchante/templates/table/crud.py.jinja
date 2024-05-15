@@ -1,0 +1,16 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from enchante.utils import CRUD
+from .model import {{ object }}
+from .schema import {{ object }}Create
+
+
+class CRUD{{ object }}(CRUD[{{ object }}, {{ object }}Create]):
+    def __init__(self):
+        super().__init__({{ object }})
+
+    async def create_new(self, db: AsyncSession, model: {{ object }}Create) -> {{ object }}:
+        return await super().create_new(db, model=model)
+
+
+crud = CRUD{{ object }}()
