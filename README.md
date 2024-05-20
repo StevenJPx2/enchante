@@ -28,12 +28,16 @@ enchante.toml
   </summary>
   SQLModel still has a long way to go
   <a href="https://github.com/tiangolo/sqlmodel/issues/654">
-    with their current roadmap
-  </a>, but they're making good progress!
+    with their current roadmap </a
+  >, but they're making good progress!
 </details>
-## How to use 1. First run `enchante init
-<root_dir
-  >` 2. Now you can run `enchante create <object_name>` </object_name></root_dir
->
-## Development ---
+
+
+## How to use
+1. First run `enchante init <root_dir>`
+2. Now you can run `enchante create <object_name>`
+
+## Development 
+
+---
 License: [MIT](https://github.com/StevenJPx2/enchante/blob/main/LICENSE)
