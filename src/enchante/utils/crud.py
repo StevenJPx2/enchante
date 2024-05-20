@@ -2,7 +2,7 @@ import operator
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Sequence
+from typing import Any, Generic, Sequence, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -15,11 +15,13 @@ from sqlalchemy.sql._typing import (
 
 from .base import Base
 
+Model = TypeVar("Model", bound=Base)
+CreateModel = TypeVar("CreateModel", bound=BaseModel)
 UIDType = UUID | str | int
 
 
 @dataclass
-class CRUD[Model: Base, CreateModel: BaseModel]:
+class CRUD(Generic[Model, CreateModel]):
     model: type[Model]
     uid_key: str = "uid"
 
