@@ -1,9 +1,10 @@
 import subprocess
-import humps
+from pathlib import Path
 from typing import Annotated, Optional
+
+import humps
 import typer
 import yaml
-from pathlib import Path
 from jinja2 import Environment
 
 from enchante.utils.types import CONFIG_FILENAME, ConfigDict
@@ -56,6 +57,19 @@ def create(
         )
         path.parent.mkdir(parents=True, exist_ok=True)
         open(path, "w").write(rendered_template)
+
+
+@app.command()
+def sync():
+    class User:
+        pass
+
+    table_data = {
+        key: str(value.__args__[0])
+        if not getattr(value.__args__[0], "__name__", None)
+        else value.__args__[0].__name__
+        for key, value in User.__annotations__.items()
+    }
 
 
 if __name__ == "__main__":
