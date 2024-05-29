@@ -1,4 +1,5 @@
 import ast
+from copy import deepcopy
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -76,35 +77,51 @@ def sync():
         model_ast = ast.parse(model_path.read_text())
         schema_ast = ast.parse(schema_path.read_text())
 
-        model = [stmt for stmt in model_ast.body if isinstance(stmt, ast.ClassDef)][0]
+        model = [model for model in model_ast.body if isinstance(model, ast.ClassDef)][
+            0
+        ]
         schema = [
-            stmt
-            for stmt in schema_ast.body
-            if isinstance(stmt, ast.ClassDef) and stmt.name == model.name
+            schema
+            for schema in schema_ast.body
+            if isinstance(schema, ast.ClassDef) and schema.name == model.name
         ][0]
 
-        schema_type_list: dict[str, ast.stmt] = {}
+        schema_body = deepcopy(schema.body)
 
         for stmt in model.body:
             if isinstance(stmt, ast.AnnAssign) and isinstance(
                 stmt.annotation, ast.Subscript
             ):
-                annotation = ast.unparse(stmt.annotation.slice)
-
-                schema_type_list[get_id(stmt.target)] = ast.AnnAssign(
+                annotation = ast.AnnAssign(
                     target=stmt.target,
-                    annotation=ast.Name(id=annotation, ctx=ast.Load()),
+                    annotation=stmt.annotation.slice,
                     simple=1,
                 )
+                for i, s_stmt in enumerate(schema_body):
+                    if isinstance(s_stmt, ast.AnnAssign) and get_id(
+                        s_stmt.target
+                    ) == get_id(stmt.target):
+                        schema_body[i] = annotation
+                        break
+                else:
+                    schema_body.append(annotation)
 
-        schema_body_dict = {}
-        for stmt in schema.body:
+        model_body_ids = [
+            get_id(stmt.target)
+            for stmt in model.body
+            if isinstance(stmt, ast.AnnAssign)
+        ]
+
+        tmp_schema_body = list(schema_body)
+
+        for stmt in tmp_schema_body:
             if isinstance(stmt, ast.AnnAssign):
-                schema_body_dict[get_id(stmt.target)] = stmt
-            else:
-                schema_body_dict[stmt] = stmt
-        schema_body = {**schema_body_dict, **schema_type_list}
-        schema.body = list(schema_body.values())
+                if get_id(stmt.target) not in model_body_ids:
+                    schema_body.remove(stmt)
+
+        schema.body = schema_body
+
+        print(ast.unparse(schema_ast))
 
         schema_path.write_text(ast.unparse(schema_ast))
 

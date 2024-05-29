@@ -8,10 +8,8 @@ from uuid import UUID
 from pydantic import BaseModel
 from sqlalchemy import cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql._typing import (
-    _ColumnExpressionArgument,
-    _ColumnExpressionOrStrLabelArgument,
-)
+from sqlalchemy.sql._typing import (_ColumnExpressionArgument,
+                                    _ColumnExpressionOrStrLabelArgument)
 
 from .base import Base
 
