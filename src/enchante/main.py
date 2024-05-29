@@ -1,13 +1,12 @@
-import subprocess
+import ast
 from pathlib import Path
 from typing import Annotated, Optional
 
 import humps
 import typer
-import yaml
 from jinja2 import Environment
 
-from enchante.utils.types import CONFIG_FILENAME, ConfigDict
+from enchante.utils.types import Config
 
 app = typer.Typer()
 
@@ -19,57 +18,95 @@ current_path = Path(__file__).parent.resolve()
 def init(
     root_dir: Path,
     alembic_dir: Annotated[
-        str, typer.Option(help="Set the name of the alembic directory")
-    ] = "alembic",
+        Path, typer.Option(help="Set the name of the alembic directory")
+    ] = Path("alembic"),
 ):
-    (root_dir / "tables").mkdir(parents=True, exist_ok=True)
-    open(Path.cwd() / CONFIG_FILENAME, "w").write(
-        yaml.safe_dump({"root_dir": str(root_dir), "alembic_dir": alembic_dir})
-    )
-
-    if not root_dir.is_dir():
-        raise FileNotFoundError(f"Given root path ({root_dir}) is not a directory")
-
-    subprocess.run(["alembic", "init", root_dir / alembic_dir])
+    Config.new(root_dir=root_dir, alembic_dir=alembic_dir)
 
 
 @app.command()
 def create(
     name: str,
     table_name: Optional[str] = None,
-    root_dir: Optional[Path] = None,
 ):
     env = Environment()
 
-    table_name = table_name or f"{name}s"
-    config: ConfigDict = yaml.safe_load(open(Path.cwd() / CONFIG_FILENAME).read())
+    table_name = humps.decamelize(table_name or f"{name}s")
+    object_name = humps.pascalize(name)
+
+    config = Config.load_config()
 
     for template_path in (current_path / "./templates/table").glob("*.py.jinja"):
-        rendered_template = env.from_string(open(template_path).read()).render(
-            object=humps.pascalize(name),
-            table_name=humps.decamelize(table_name),
+        rendered_template = env.from_string(template_path.read_text()).render(
+            object=object_name,
+            table_name=table_name,
         )
         path = (
-            Path(config["root_dir"])
-            / "tables"
-            / humps.decamelize(table_name)
+            config.tables_path
+            / table_name
             / str(template_path.name).replace(".jinja", "")
         )
         path.parent.mkdir(parents=True, exist_ok=True)
         open(path, "w").write(rendered_template)
 
+    with open(config.models_path, "a") as schemas:
+        schemas.write(
+            f"from .{config.tables_path.stem}.{table_name}.model import {object_name}"
+        )
+
+    with open(config.schemas_path, "a") as schemas:
+        schemas.write(f"from .{config.tables_path.stem}.{table_name}.schema import *")
+
+
+def get_id(target: ast.Name | ast.Attribute | ast.Subscript):
+    if isinstance(target, ast.Name):
+        return target.id
+    else:
+        return target.value.id  # type: ignore
+
 
 @app.command()
 def sync():
-    class User:
-        pass
+    config = Config.load_config()
 
-    table_data = {
-        key: str(value.__args__[0])
-        if not getattr(value.__args__[0], "__name__", None)
-        else value.__args__[0].__name__
-        for key, value in User.__annotations__.items()
-    }
+    for table in config.tables_path.iterdir():
+        model_path = table / "model.py"
+        schema_path = table / "schema.py"
+
+        model_ast = ast.parse(model_path.read_text())
+        schema_ast = ast.parse(schema_path.read_text())
+
+        model = [stmt for stmt in model_ast.body if isinstance(stmt, ast.ClassDef)][0]
+        schema = [
+            stmt
+            for stmt in schema_ast.body
+            if isinstance(stmt, ast.ClassDef) and stmt.name == model.name
+        ][0]
+
+        schema_type_list: dict[str, ast.stmt] = {}
+
+        for stmt in model.body:
+            if isinstance(stmt, ast.AnnAssign) and isinstance(
+                stmt.annotation, ast.Subscript
+            ):
+                annotation = ast.unparse(stmt.annotation.slice)
+
+                schema_type_list[get_id(stmt.target)] = ast.AnnAssign(
+                    target=stmt.target,
+                    annotation=ast.Name(id=annotation, ctx=ast.Load()),
+                    simple=1,
+                )
+
+        schema_body_dict = {}
+        for stmt in schema.body:
+            if isinstance(stmt, ast.AnnAssign):
+                schema_body_dict[get_id(stmt.target)] = stmt
+            else:
+                schema_body_dict[stmt] = stmt
+        schema_body = {**schema_body_dict, **schema_type_list}
+        schema.body = list(schema_body.values())
+
+        schema_path.write_text(ast.unparse(schema_ast))
 
 
 if __name__ == "__main__":

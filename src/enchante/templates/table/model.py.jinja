@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import DateTime, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from enchante.utils import Base
 
@@ -15,6 +14,6 @@ class {{ object }}(Base):
         primary_key=True, server_default="gen_random_uuid()"
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default="now()"
+        DateTime(timezone=True), default=func.current_timestamp
     )
     updated_at: Mapped[datetime | None]
