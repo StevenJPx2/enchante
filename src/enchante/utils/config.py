@@ -13,17 +13,17 @@ class Config(BaseModel):
     root_dir: Path
     alembic_dir: Path
 
-    def __init__(self, *, root_dir: Path, alembic_dir: Path):
-        self.root_dir = root_dir
-        self.alembic_dir = alembic_dir
-
+    def model_post_init(self, _):
         CONFIG_FILEPATH.touch()
 
         self.tables_path
         self.schemas_path
         self.models_path
 
-        subprocess.run(["alembic", "init", root_dir / alembic_dir])
+        alembic_path = self.root_dir / self.alembic_dir
+
+        if not alembic_path.exists():
+            subprocess.run(["alembic", "init", alembic_path])
 
         self.save_config()
 

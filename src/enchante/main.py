@@ -7,7 +7,7 @@ import humps
 import typer
 from jinja2 import Environment
 
-from enchante.utils.types import Config
+from enchante.utils import Config
 
 app = typer.Typer()
 
