@@ -22,7 +22,9 @@ def init(
         Path, typer.Option(help="Set the name of the alembic directory")
     ] = Path("alembic"),
 ):
-    Config.new(root_dir=root_dir, alembic_dir=alembic_dir)
+    Config(root_dir=root_dir, alembic_dir=alembic_dir)
+
+    print("✅ Success!")
 
 
 @app.command()
@@ -34,6 +36,7 @@ def create(
 
     table_name = humps.decamelize(table_name or f"{name}s")
     object_name = humps.pascalize(name)
+    print(f"🔄 Creating {table_name}...")
 
     config = Config.load_config()
 
@@ -58,6 +61,8 @@ def create(
     with open(config.schemas_path, "a") as schemas:
         schemas.write(f"from .{config.tables_path.stem}.{table_name}.schema import *")
 
+    print("✅ Success!")
+
 
 def get_id(target: ast.Name | ast.Attribute | ast.Subscript):
     if isinstance(target, ast.Name):
@@ -68,9 +73,11 @@ def get_id(target: ast.Name | ast.Attribute | ast.Subscript):
 
 @app.command()
 def sync():
+    print("🔄 Syncing tables with schemas...")
     config = Config.load_config()
 
     for table in config.tables_path.iterdir():
+        print(f"📃 Syncing {table.stem}...")
         model_path = table / "model.py"
         schema_path = table / "schema.py"
 
@@ -121,9 +128,8 @@ def sync():
 
         schema.body = schema_body
 
-        print(ast.unparse(schema_ast))
-
         schema_path.write_text(ast.unparse(schema_ast))
+    print("✅ Success!")
 
 
 if __name__ == "__main__":
