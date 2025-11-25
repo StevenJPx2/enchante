@@ -9,3 +9,9 @@
 .PHONY: .install
 install: .poetry .pre-commit
 	poetry install
+
+.PHONY: .release
+release:
+	poetry build
+	poetry publish
+

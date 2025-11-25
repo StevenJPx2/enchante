@@ -14,7 +14,8 @@ def optional(model: type[BaseModel]):
         field: FieldInfo, default: Any = None
     ) -> tuple[Any, FieldInfo]:
         new = deepcopy(field)
-        new.default = default
+        if getattr(new, "default_factory", None) is None:
+            new.default = default
         new.annotation = Optional[field.annotation]  # type: ignore
         return new.annotation, new
 
